@@ -1,0 +1,363 @@
+/* =====================================================================
+   styles.css - LENTE.pwa
+   Autor: Angel Daniel Ocampo Martinez
+
+   Concepto visual: "visor de cámara profesional"
+   - Fondo azul noche (#0f172a = theme_color del manifest)
+   - Esquinas de enfoque verde lima, como el autofocus de una cámara
+   - Acento naranja tipo "REC" para las acciones principales
+   - Textos técnicos en fuente monoespaciada (estilo HUD)
+   Diseño mobile-first: botones grandes y una sola columna.
+   ===================================================================== */
+
+:root {
+  --fondo: #0f172a;          /* theme_color / background_color del manifest */
+  --superficie: #131d33;
+  --superficie-2: #1a2742;
+  --linea: #2a3a5c;
+  --texto: #e8edf7;
+  --texto-suave: #8b9bbd;
+  --rec: #ff6b2c;            /* naranja "grabando" */
+  --enfoque: #c6f432;        /* verde lima de las esquinas de enfoque */
+  --peligro: #ff5d73;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* El atributo hidden debe ganar siempre, aunque una clase use display:flex/grid */
+[hidden] {
+  display: none !important;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--sans);
+  color: var(--texto);
+  background-color: var(--fondo);
+  /* Cuadrícula sutil de fondo, como la guía de composición de una cámara */
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 28px 28px;
+  /* Zonas seguras del iPhone (notch y barra inferior) en modo standalone */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ---------------------------------------------------------------------
+   Encabezado con la marca y el autor
+   --------------------------------------------------------------------- */
+.barra-superior {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: rgba(15, 23, 42, 0.9);
+  border-bottom: 1px solid var(--linea);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Logo: un lente dibujado solo con CSS (anillos concéntricos) */
+.marca-icono {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 3px solid var(--enfoque);
+  box-shadow: inset 0 0 0 5px var(--fondo), inset 0 0 0 9px var(--rec);
+  flex-shrink: 0;
+}
+
+.barra-superior h1 {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.barra-superior h1 span {
+  color: var(--rec);
+  letter-spacing: 0;
+}
+
+.autor {
+  margin: 2px 0 0;
+  font-size: 0.72rem;
+  color: var(--texto-suave);
+}
+
+/* ---------------------------------------------------------------------
+   Contenedor y tarjetas
+   --------------------------------------------------------------------- */
+.contenedor {
+  max-width: 540px;
+  margin: 0 auto;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.tarjeta {
+  background: var(--superficie);
+  border: 1px solid var(--linea);
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.tarjeta h2 {
+  margin: 0 0 10px;
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.tarjeta p,
+.tarjeta li {
+  line-height: 1.55;
+  font-size: 0.93rem;
+}
+
+.tarjeta ul,
+.tarjeta ol {
+  padding-left: 20px;
+  margin: 10px 0;
+}
+
+/* Aviso ético: franja naranja lateral para llamar la atención sin asustar */
+.tarjeta-aviso {
+  border-left: 5px solid var(--rec);
+  background: linear-gradient(135deg, #1d2338 0%, var(--superficie) 60%);
+}
+
+/* Instrucciones de iOS: franja verde lima */
+.tarjeta-info {
+  border-left: 5px solid var(--enfoque);
+}
+
+.nota {
+  color: var(--texto-suave);
+  font-size: 0.85rem !important;
+}
+
+/* ---------------------------------------------------------------------
+   Visor de la cámara
+   --------------------------------------------------------------------- */
+.visor {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;          /* vertical, como la cámara del teléfono */
+  background: #05080f;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+#visor-camara {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;            /* llena el visor sin deformar la imagen */
+  display: block;
+}
+
+/* Cámara frontal: espejo horizontal (se ve como al mirarse al espejo) */
+#visor-camara.espejo {
+  transform: scaleX(-1);
+}
+
+/* Esquinas de enfoque: cada una dibuja 2 bordes formando una "L" */
+.esquina {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border: 0 solid var(--enfoque);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.sup-izq { top: 14px; left: 14px; border-top-width: 3px; border-left-width: 3px; border-top-left-radius: 6px; }
+.sup-der { top: 14px; right: 14px; border-top-width: 3px; border-right-width: 3px; border-top-right-radius: 6px; }
+.inf-izq { bottom: 14px; left: 14px; border-bottom-width: 3px; border-left-width: 3px; border-bottom-left-radius: 6px; }
+.inf-der { bottom: 14px; right: 14px; border-bottom-width: 3px; border-right-width: 3px; border-bottom-right-radius: 6px; }
+
+/* HUD: indicadores sobre el video */
+.hud {
+  position: absolute;
+  top: 60px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 3;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.hud span {
+  background: rgba(5, 8, 15, 0.65);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.hud-vivo {
+  color: var(--rec);
+  animation: parpadeo 1.2s infinite;
+}
+
+.hud-lente {
+  color: var(--enfoque);
+}
+
+@keyframes parpadeo {
+  50% { opacity: 0.35; }
+}
+
+/* Pantalla de "cámara apagada" sobre el visor */
+.visor-vacio {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--texto-suave);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+}
+
+/* Lente apagado dibujado con CSS */
+.visor-vacio-icono {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 2px dashed var(--linea);
+  box-shadow: inset 0 0 0 12px #05080f, inset 0 0 0 14px var(--linea);
+}
+
+/* ---------------------------------------------------------------------
+   Mensaje de estado (estilo consola)
+   --------------------------------------------------------------------- */
+.estado {
+  margin: 14px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #0a1122;
+  border: 1px solid var(--linea);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--texto-suave);
+}
+
+.estado::before {
+  content: "> ";
+  color: var(--enfoque);
+}
+
+.estado.ok {
+  color: var(--enfoque);
+}
+
+.estado.error {
+  color: var(--peligro);
+  border-color: var(--peligro);
+}
+
+/* ---------------------------------------------------------------------
+   Botones (mínimo 48px de alto para tocarlos fácil con el dedo)
+   --------------------------------------------------------------------- */
+.btn {
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 1px solid var(--linea);
+  border-radius: 999px;          /* forma de píldora */
+  background: var(--superficie-2);
+  color: var(--texto);
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.2s;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);        /* efecto de "presionar" en el móvil */
+}
+
+.btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Botón principal: estilo "obturador" naranja */
+.btn-principal {
+  width: 100%;
+  background: var(--rec);
+  border-color: var(--rec);
+  color: #1a0b03;
+  box-shadow: 0 6px 20px rgba(255, 107, 44, 0.3);
+}
+
+.btn-peligro {
+  border-color: var(--peligro);
+  color: var(--peligro);
+  background: transparent;
+}
+
+.btn-instalar {
+  min-height: 40px;
+  padding: 8px 14px;
+  background: var(--enfoque);
+  border-color: var(--enfoque);
+  color: #10180a;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.controles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* En pantallas angostas el texto de los botones de control se reduce un poco */
+.controles .btn {
+  font-size: 0.85rem;
+  padding: 12px 10px;
+}
+
+/* ---------------------------------------------------------------------
+   Pie de página con el autor
+   --------------------------------------------------------------------- */
+.pie {
+  text-align: center;
+  color: var(--texto-suave);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  padding: 8px 16px 28px;
+}
+
+.pie strong {
+  color: var(--texto);
+}

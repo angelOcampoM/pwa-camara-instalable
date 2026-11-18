@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <!-- viewport-fit=cover: en iPhone con notch el contenido usa toda la pantalla
+       (las zonas seguras se respetan en styles.css con env(safe-area-inset-*)) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>LENTE.pwa - Cámara Ética</title>
+  <meta name="description" content="PWA instalable con acceso responsable a la cámara frontal y trasera">
+  <meta name="author" content="Angel Daniel Ocampo Martinez">
+
+  <!-- ===================== INSTALABILIDAD (Chrome / Android) ===================== -->
+  <!-- Manifiesto con ruta RELATIVA para que funcione en el subdirectorio de GitHub Pages -->
+  <link rel="manifest" href="./manifest.json">
+  <!-- Color de la barra del sistema / barra de direcciones (igual que theme_color del manifest) -->
+  <meta name="theme-color" content="#0f172a">
+
+  <!-- ===================== AJUSTES PARA iOS (Safari / WebKit) ===================== -->
+  <!-- Safari no usa los iconos del manifest para la pantalla de inicio: necesita esta etiqueta propia -->
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <!-- Permite que, al agregarla a inicio, se abra sin la barra de Safari (modo standalone) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <!-- Nombre que se muestra debajo del icono en el iPhone -->
+  <meta name="apple-mobile-web-app-title" content="LENTE">
+  <!-- Estilo de la barra de estado (hora, batería) en modo standalone -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <link rel="icon" href="./icons/icon-192.png">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+  <header class="barra-superior">
+    <div class="marca">
+      <span class="marca-icono" aria-hidden="true"></span>
+      <div>
+        <h1>LENTE<span>.pwa</span></h1>
+        <p class="autor">Angel Daniel Ocampo Martinez</p>
+      </div>
+    </div>
+    <!-- Botón propio de instalación: oculto hasta que el navegador dispare 'beforeinstallprompt' -->
+    <button id="btn-instalar" class="btn btn-instalar" type="button" hidden>⬇ Instalar App</button>
+  </header>
+
+  <main class="contenedor">
+
+    <!-- Instrucciones manuales para iPhone/iPad: iOS NUNCA dispara 'beforeinstallprompt',
+         así que mostramos los pasos para "Agregar a pantalla de inicio" -->
+    <section id="aviso-ios" class="tarjeta tarjeta-info" hidden>
+      <h2>📱 Instala esta app en tu iPhone</h2>
+      <ol>
+        <li>Toca el botón <strong>Compartir</strong> <span aria-hidden="true">⬆️</span> en la barra de Safari.</li>
+        <li>Elige <strong>"Agregar a pantalla de inicio"</strong>.</li>
+        <li>Pulsa <strong>Agregar</strong>: la app se abrirá sin la barra del navegador.</li>
+      </ol>
+    </section>
+
+    <!-- Visor de la cámara -->
+    <section class="tarjeta">
+      <div class="visor">
+        <!-- Esquinas de enfoque (decorativas, estilo visor de cámara) -->
+        <span class="esquina sup-izq" aria-hidden="true"></span>
+        <span class="esquina sup-der" aria-hidden="true"></span>
+        <span class="esquina inf-izq" aria-hidden="true"></span>
+        <span class="esquina inf-der" aria-hidden="true"></span>
+
+        <!-- HUD: indicadores sobre el video. Se muestran solo con la cámara encendida (app.js) -->
+        <div id="hud" class="hud" hidden>
+          <span class="hud-vivo">● EN VIVO</span>
+          <span id="hud-lente" class="hud-lente">TRASERA</span>
+        </div>
+
+        <!-- autoplay: el video inicia solo al recibir el stream
+             playsinline: OBLIGATORIO en iOS, evita que Safari abra el video en pantalla completa
+             muted: los navegadores solo permiten autoplay si el video está silenciado -->
+        <video id="visor-camara" autoplay playsinline muted></video>
+        <div id="visor-vacio" class="visor-vacio">
+          <span class="visor-vacio-icono" aria-hidden="true"></span>
+          <p>CÁMARA APAGADA</p>
+        </div>
+      </div>
+
+      <!-- Mensaje de estado (aria-live: los lectores de pantalla anuncian los cambios) -->
+      <p id="estado-camara" class="estado" aria-live="polite">Cámara apagada.</p>
+
+      <!-- PASO 1 del Pre-Permiso: este botón NO enciende la cámara, solo muestra el aviso -->
+      <button id="btn-preparar-camara" class="btn btn-principal" type="button">Preparar cámara</button>
+
+      <!-- Controles: deshabilitados hasta que la cámara esté encendida -->
+      <div class="controles">
+        <button id="btn-alternar-camara" class="btn" type="button" disabled>🔄 Cambiar cámara</button>
+        <button id="btn-apagar-camara" class="btn btn-peligro" type="button" disabled>⏻ Apagar cámara</button>
+      </div>
+    </section>
+
+    <!-- ===================== AVISO ÉTICO (Pre-Permiso UX) ===================== -->
+    <!-- Oculto por defecto. Explica el motivo ANTES de que aparezca el diálogo nativo del navegador -->
+    <section id="aviso-permiso" class="tarjeta tarjeta-aviso" hidden>
+      <h2>🔒 Antes de continuar</h2>
+      <p>
+        Esta aplicación requiere acceso a tu cámara únicamente para mostrar una vista previa local en pantalla.
+        Ninguna imagen se envía a servidores externos.
+      </p>
+      <ul>
+        <li>Se encenderá primero la <strong>cámara trasera</strong>; podrás cambiar a la frontal cuando quieras.</li>
+        <li>El video se procesa <strong>solo en tu dispositivo</strong> y no se graba.</li>
+        <li>Puedes apagar la cámara en cualquier momento.</li>
+      </ul>
+      <p class="nota">Al continuar, tu navegador te pedirá permiso. Elige <strong>"Permitir"</strong> para usar esta función.</p>
+      <div class="controles">
+        <button id="btn-cancelar-permiso" class="btn" type="button">Ahora no</button>
+        <!-- PASO 2 del Pre-Permiso: el consentimiento consciente, aquí sí se llama a getUserMedia -->
+        <button id="btn-confirmar-permiso" class="btn btn-principal" type="button">Entendido, activar cámara</button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="pie">
+    Desarrollado por <strong>Angel Daniel Ocampo Martinez</strong><br>
+    Desarrollo de Aplicaciones Web Progresivas · Tema 6.1 y 6.2
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>
